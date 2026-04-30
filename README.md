@@ -1,7 +1,7 @@
 # @yuppay/sdk
 
 Официальный SDK для приёма оплаты через **YupPay** — платежи в токенах **DarAi** или **USDT** в сети NEAR (NEP-141).
-Подключение к мерчанту в 5 строк, без зависимостей от Supabase SDK или near-api-js.
+Подключение к мерчанту в 5 строк.
 
 - Серверный + браузерный (универсальный пакет, ESM/CJS, TypeScript-типы).
 - Курс DarAi/USDT берётся с [api.ref.finance](https://api.ref.finance/list-token-price) — счёт можно выставлять сразу в USD, SDK сам пересчитает в Darai по актуальному курсу.
