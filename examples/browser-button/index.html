@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YupPay button — пример</title>
+    <style>
+      body { font-family: system-ui; margin: 40px; }
+      .row { margin: 12px 0; }
+    </style>
+    <!-- В проде используйте jsDelivr или unpkg: -->
+    <!-- <script type="module" src="https://unpkg.com/@yuppay/sdk/dist/browser-button.js"></script> -->
+    <script type="module" src="../../dist/browser-button.js"></script>
+  </head>
+  <body>
+    <h1>Купить «Premium доступ»</h1>
+    <p>Цена: <strong>$9.99</strong> (~50 Darai по текущему курсу).</p>
+
+    <div class="row">
+      <button id="checkout">Создать счёт</button>
+    </div>
+
+    <div class="row" id="pay-row" style="display:none">
+      <yuppay-button id="pay" label="Оплатить через YupPay"></yuppay-button>
+      <span id="meta" style="margin-left: 12px; color:#666"></span>
+    </div>
+
+    <script>
+      // Всегда создавайте счёт на СЕРВЕРЕ. Не вставляйте ypp_live_* в браузерный код.
+      document.getElementById('checkout').addEventListener('click', async () => {
+        const r = await fetch('/checkout', { method: 'POST' }).then((x) => x.json());
+        const btn = document.getElementById('pay');
+        btn.setAttribute('pay-url', r.payUrl ?? '');
+        btn.setAttribute('pay-tg-url', r.payTgUrl ?? '');
+        document.getElementById('meta').textContent = `${r.humanAmount} • заказ ${r.orderId}`;
+        document.getElementById('pay-row').style.display = '';
+      });
+    </script>
+  </body>
+</html>

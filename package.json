@@ -1,0 +1,67 @@
+{
+  "name": "@yuppay/sdk",
+  "version": "0.1.0",
+  "description": "Official SDK for YupPay — accept payments in DarAi or USDT (NEAR NEP-141)",
+  "license": "MIT",
+  "author": "YupPay",
+  "homepage": "https://github.com/Se-La-Via/YupPay",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Se-La-Via/YupPay.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Se-La-Via/YupPay/issues"
+  },
+  "keywords": [
+    "yuppay",
+    "darai",
+    "usdt",
+    "near",
+    "nep-141",
+    "payments",
+    "crypto",
+    "sdk"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./browser-button": {
+      "types": "./dist/browser-button.d.ts",
+      "import": "./dist/browser-button.js",
+      "require": "./dist/browser-button.cjs"
+    }
+  },
+  "bin": {
+    "yuppay": "./dist/cli.cjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0"
+  }
+}

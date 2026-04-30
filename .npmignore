@@ -1,0 +1,7 @@
+src/
+test/
+examples/
+tsconfig.json
+tsup.config.ts
+.gitignore
+*.tsbuildinfo
