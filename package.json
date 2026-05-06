@@ -1,6 +1,6 @@
 {
   "name": "@yuppay/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Official SDK for YupPay — accept payments in DarAi or USDT (NEAR NEP-141)",
   "license": "MIT",
   "author": "YupPay",

@@ -29,13 +29,21 @@ bun add @yuppay/sdk
 
 ---
 
+## Аутентификация
+
+Один секрет — `YUPPAY_API_KEY` вида `yup_live_…`. Берётся в кабинете `/pay` при создании приложения и кладётся в env-переменную сервера. Передаётся в заголовке `x-yuppay-api-key` (SDK подставляет автоматически).
+
+> **Самохостинг.** Если вы развернули `yuppay-api` Edge Function с `verify_jwt = true` (Supabase-шлюз с проверкой JWT), дополнительно передайте публичный anon JWT через `supabaseAnonKey` в конструктор клиента (или env `YUPPAY_SUPABASE_ANON_KEY`). На canonical-проде YupPay шлюз пропускает запросы без JWT — этот параметр не нужен.
+
+---
+
 ## Быстрый старт (сервер)
 
 ```ts
 import { YupPayClient } from '@yuppay/sdk';
 
 const yp = new YupPayClient({
-  apiKey: process.env.YUPPAY_API_KEY!, // ypp_live_xxx
+  apiKey: process.env.YUPPAY_API_KEY!, // yup_live_…
 });
 
 // Выставляем счёт в USD — SDK пересчитает в Darai по курсу ref.finance.
@@ -44,7 +52,7 @@ const invoice = await yp.createInvoice({
   amount: { usd: 9.99 },
   metadata: { orderId: 'order-42' },
   returnUrl: 'https://shop.example/orders/42',
-  expiresInSec: 15 * 60,
+  expiresInSec: 60 * 60,   // дефолт 30 мин — продлите если оплата ожидается позже
 });
 
 console.log(invoice.payUrl);    // → https://www.yupland.io/pay/i/<token>

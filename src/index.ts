@@ -54,6 +54,7 @@ export {
   YupPayClient,
   YupPayApiError,
   DEFAULT_BASE_URL,
+  SUPABASE_ANON_KEY_ENV_VAR,
   type YupPayClientOptions,
   type YupPayInvoice,
   type CreateInvoiceInput,

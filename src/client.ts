@@ -18,7 +18,37 @@ import { parseAmount } from './amount.js';
 import { defaultPriceProvider, type PriceProvider } from './price.js';
 import { usdToToken, type ConversionResult } from './convert.js';
 
-export const DEFAULT_BASE_URL = 'https://hxgvqtxsgdscbylzakxo.supabase.co';
+/**
+ * Production base URL of the YupPay deployment (yupland.io).
+ * Override via `new YupPayClient({ baseUrl: ... })` for staging / self-hosted.
+ */
+export const DEFAULT_BASE_URL = 'https://jkjgpbawhxtafmwsrseb.supabase.co';
+
+/**
+ * Environment variable read at runtime to supply the Supabase anon JWT
+ * required by the YupPay Edge perimeter. Populate `YUPPAY_SUPABASE_ANON_KEY`
+ * in your server env, or pass `supabaseAnonKey` to the client constructor.
+ *
+ * The value is *the same publicly-distributed anon JWT* that the
+ * Yupland front-end bundles — it carries the `anon` role and grants no
+ * privileged access on its own (RLS still applies). The SDK does not
+ * embed it for you because public-source-code policy varies by team;
+ * publish it through your own config / env.
+ *
+ * Quick way to obtain the current value (one-liner):
+ *
+ *   curl -s https://www.yupland.io/ \
+ *     | grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' | head -1 \
+ *     | xargs -I{} curl -s "https://www.yupland.io{}" \
+ *     | grep -oE 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9._-]+' | head -1
+ */
+export const SUPABASE_ANON_KEY_ENV_VAR = 'YUPPAY_SUPABASE_ANON_KEY';
+
+function readSupabaseAnonKeyFromEnv(): string | undefined {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  const v = env?.[SUPABASE_ANON_KEY_ENV_VAR];
+  return v ? v.trim() : undefined;
+}
 
 export type YupPayClientOptions = {
   /**
@@ -43,6 +73,16 @@ export type YupPayClientOptions = {
    * Defaults to `https://www.yupland.io`.
    */
   publicBaseUrl?: string;
+  /**
+   * Override the Supabase anon JWT used at the gateway perimeter.
+   * The default ({@link DEFAULT_SUPABASE_ANON_KEY}) targets the public
+   * YupPay deployment and is publicly safe — it carries the `anon` role
+   * and grants no privileged access on its own.
+   *
+   * Set to `null` to disable the header (e.g. when self-hosting Edge
+   * Functions with `--no-verify-jwt` and a different Supabase project).
+   */
+  supabaseAnonKey?: string | null;
   /** Override fetch (Node ≥18 has it built-in). */
   fetchImpl?: typeof fetch;
   /** Override price provider (e.g. mock or shared cache). */
@@ -149,6 +189,7 @@ export class YupPayClient {
   readonly priceProvider: PriceProvider;
   private readonly apiKey: string | undefined;
   private readonly appId: string | undefined;
+  private readonly supabaseAnonKey: string | null;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
   private readonly extraHeaders: Record<string, string>;
@@ -158,6 +199,10 @@ export class YupPayClient {
     this.appId = opts.appId?.trim() || undefined;
     this.baseUrl = (opts.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
     this.publicBaseUrl = (opts.publicBaseUrl ?? 'https://www.yupland.io').replace(/\/+$/, '');
+    this.supabaseAnonKey =
+      opts.supabaseAnonKey === null
+        ? null
+        : (opts.supabaseAnonKey?.trim() || readSupabaseAnonKeyFromEnv() || null);
     this.fetchImpl = opts.fetchImpl ?? globalThis.fetch;
     this.priceProvider = opts.priceProvider ?? defaultPriceProvider;
     this.timeoutMs = opts.timeoutMs ?? 15_000;
@@ -182,15 +227,27 @@ export class YupPayClient {
     const t = setTimeout(() => ac.abort(), this.timeoutMs);
     let res: Response;
     try {
+      // Supabase gateway requires a valid anon JWT in `Authorization` and
+      // `apikey` headers at the perimeter (even with `verify_jwt = false`
+      // in config.toml — gateway is a separate layer). YupPay's app-level
+      // auth is the `x-yuppay-api-key` header.
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'x-yuppay-api-key': this.apiKey,
+        ...this.extraHeaders,
+      };
+      if (this.supabaseAnonKey) {
+        headers.Authorization = `Bearer ${this.supabaseAnonKey}`;
+        headers.apikey = this.supabaseAnonKey;
+      } else {
+        // Self-hosted / no-JWT deployments: pass the API key as bearer
+        // (the original SDK behaviour, kept for backwards compatibility).
+        headers.Authorization = `Bearer ${this.apiKey}`;
+      }
       res = await this.fetchImpl(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-          'x-yuppay-api-key': this.apiKey,
-          ...this.extraHeaders,
-        },
+        headers,
         body: JSON.stringify(body),
         signal: ac.signal,
       });
@@ -208,6 +265,23 @@ export class YupPayClient {
       }
     }
     if (!res.ok) {
+      const code = pickStr(parsed, 'code') ?? pickStr(parsed, 'error');
+      // Surface a more helpful message for the most common pitfall: hitting
+      // the Supabase gateway without a valid anon JWT.
+      if (
+        res.status === 401 &&
+        (code === 'UNAUTHORIZED_INVALID_JWT_FORMAT' || code === 'UNAUTHORIZED_NO_AUTH_HEADER') &&
+        !this.supabaseAnonKey
+      ) {
+        throw new YupPayApiError(res.status, {
+          error: code,
+          message:
+            'YupPay edge gateway requires a Supabase anon JWT. Pass `supabaseAnonKey` to ' +
+            'YupPayClient (or set env ' + SUPABASE_ANON_KEY_ENV_VAR + '). ' +
+            'See README → "Authentication" for how to obtain the public anon key.',
+          hint: 'missing_supabase_anon_key',
+        });
+      }
       throw new YupPayApiError(res.status, parsed);
     }
     if (parsed && typeof parsed === 'object' && (parsed as Record<string, unknown>).ok === false) {
