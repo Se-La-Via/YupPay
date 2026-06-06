@@ -21,8 +21,11 @@ import { usdToToken, type ConversionResult } from './convert.js';
 /**
  * Production base URL of the YupPay deployment (yupland.io).
  * Override via `new YupPayClient({ baseUrl: ... })` for staging / self-hosted.
+ *
+ * С 2026-06-06 — self-hosted на portal.yupland.io (раньше был
+ * jkjgpbawhxtafmwsrseb.supabase.co, тот проект задушен).
  */
-export const DEFAULT_BASE_URL = 'https://jkjgpbawhxtafmwsrseb.supabase.co';
+export const DEFAULT_BASE_URL = 'https://portal.yupland.io';
 
 /**
  * Environment variable read at runtime to supply the Supabase anon JWT

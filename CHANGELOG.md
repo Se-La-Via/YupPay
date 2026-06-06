@@ -4,6 +4,11 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [0.3.0] - 2026-06-06
+
+### Changed (breaking для интеграций, не передающих `baseUrl`)
+- **`DEFAULT_BASE_URL` переключён на self-hosted деплой** — `https://portal.yupland.io` (вместо `https://jkjgpbawhxtafmwsrseb.supabase.co`). Бывший Cloud-проект на Supabase задушен в рамках миграции на свой сервер; старый URL больше не отвечает. Мерчантам, явно передающим `baseUrl`, обновление не требуется.
+
 ## [0.2.0] - 2026-05-06
 
 ### Fixed (critical)
