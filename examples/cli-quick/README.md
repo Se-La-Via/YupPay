@@ -1,7 +1,7 @@
 # Быстрая проверка через CLI
 
 ```bash
-npm i -g @yuppay/sdk
+npm i -g github:Se-La-Via/YupPay   # пакет пока не в npm-реестре
 
 # Курс DarAi → USD (без API-ключа)
 yuppay price --token darai

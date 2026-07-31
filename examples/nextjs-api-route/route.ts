@@ -1,7 +1,7 @@
 // Next.js App Router API route: /app/api/yuppay/checkout/route.ts
 // и /app/api/yuppay/webhook/route.ts
 //
-// npm i @yuppay/sdk
+// npm i github:Se-La-Via/YupPay   (пакет пока не в npm-реестре)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { YupPayClient, verifyWebhookSignature } from '@yuppay/sdk';

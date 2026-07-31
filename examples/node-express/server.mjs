@@ -4,8 +4,8 @@
  *  2. POST /yuppay/webhook — принимает уведомление об оплате с проверкой HMAC.
  *
  * Запуск:
- *   npm i express @yuppay/sdk
- *   YUPPAY_API_KEY=ypp_live_xxx YUPPAY_WEBHOOK_SECRET=whsec_xxx node server.mjs
+ *   npm i express github:Se-La-Via/YupPay   (SDK пока не в npm-реестре)
+ *   YUPPAY_API_KEY=yup_live_xxx YUPPAY_WEBHOOK_SECRET=whsec_xxx node server.mjs
  */
 import express from 'express';
 import { YupPayClient, verifyWebhookSignature, formatAmount, DARAI } from '@yuppay/sdk';

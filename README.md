@@ -17,15 +17,33 @@
 
 ## Установка
 
+Пакет пока **не опубликован в npm-реестре** — ставится напрямую из GitHub:
+
 ```bash
-npm i @yuppay/sdk
+npm i github:Se-La-Via/YupPay
 # или
-pnpm add @yuppay/sdk
+pnpm add github:Se-La-Via/YupPay
 # или
-bun add @yuppay/sdk
+bun add github:Se-La-Via/YupPay
 ```
 
+Импорт при этом обычный — `import { YupPayClient } from '@yuppay/sdk'` (имя пакета берётся из `package.json` репозитория).
+
 Требует **Node ≥ 18** (используется встроенный `fetch`). В Bun, Deno, Cloudflare Workers, Vercel Edge — работает «из коробки».
+
+---
+
+## Базовый URL
+
+Все запросы уходят на канонический прод YupPay:
+
+```
+https://portal.yupland.io/functions/v1/yuppay-api
+```
+
+Значение зашито в `DEFAULT_BASE_URL`; переопределяется параметром `baseUrl` конструктора (см. [Самохостинг](#самохостинг-и-кастомный-домен)).
+
+> **Получаете HTTP 402?** До 06.06.2026 прод YupPay жил на `https://jkjgpbawhxtafmwsrseb.supabase.co`. В рамках переезда на собственный сервер тот проект отключён и теперь отвечает **402 Payment Required** на любые вызовы Edge-функций. Лечится обновлением SDK до **≥ 0.3.0** (или заменой захардкоженного URL / `baseUrl` на `https://portal.yupland.io`). Приложения, API-ключи, счета и настройки webhook перенесены — перевыпускать ключи не нужно.
 
 ---
 
@@ -142,8 +160,10 @@ if (!result.valid) return new Response(result.reason, { status: 400 });
 
 Подходит для лендингов и no-code сайтов. Создавать счёт **всё равно нужно на сервере** — кнопка только редиректит на готовую ссылку.
 
+Файл кнопки собирается локально (`npm run build` → `dist/browser-button.js`) и кладётся рядом со статикой сайта. CDN-вариант `https://unpkg.com/@yuppay/sdk/dist/browser-button.js` заработает только после публикации пакета в npm-реестре.
+
 ```html
-<script type="module" src="https://unpkg.com/@yuppay/sdk/dist/browser-button.js"></script>
+<script type="module" src="/js/browser-button.js"></script>
 
 <yuppay-button
   pay-url="https://www.yupland.io/pay/i/abcdef..."
@@ -166,7 +186,7 @@ if (!result.valid) return new Response(result.reason, { status: 400 });
 yuppay price --token darai
 yuppay format 1234567890000000000000 --token darai      # → "1 234,57 Darai"
 
-export YUPPAY_API_KEY=ypp_live_xxx
+export YUPPAY_API_KEY=yup_live_xxx
 yuppay create-invoice --usd 9.99 --return-url https://shop.example/order/42
 yuppay get-invoice <publicToken>
 ```
@@ -254,16 +274,18 @@ await yp.createInvoice({ token: MY_TOKEN, amount: { token: '12,5' } });
 ```ts
 new YupPayClient({
   apiKey,
-  baseUrl: 'https://my-yuppay.supabase.co',     // свой Supabase-проект
+  baseUrl: 'https://my-yuppay.example.com',     // свой деплой yuppay-api (без /functions/v1)
   publicBaseUrl: 'https://pay.myshop.com',      // куда вести покупателя (pay_url)
 });
 ```
+
+`baseUrl` — это origin шлюза; путь `/functions/v1/yuppay-api` SDK дописывает сам. Для канонического прода параметр не нужен — умолчание уже `https://portal.yupland.io`.
 
 ---
 
 ## Безопасность
 
-- **Никогда** не вшивайте `ypp_live_*` в браузерный JS — создавайте счёт только на сервере.
+- **Никогда** не вшивайте `yup_live_*` (и легаси `ypp_live_*`) в браузерный JS — создавайте счёт только на сервере.
 - В webhook-эндпоинте всегда работайте с **сырым телом** (`req.text()` / `express.raw()`), иначе подпись не сойдётся.
 - Включите проверку `toleranceSec` (по умолчанию 5 мин) — защищает от replay-атак.
 - Храните `YUPPAY_WEBHOOK_SECRET` отдельно от `YUPPAY_API_KEY`. Это разные секреты с разными префиксами.

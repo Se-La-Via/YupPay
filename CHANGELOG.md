@@ -4,6 +4,15 @@
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/), версионирование — [SemVer](https://semver.org/lang/ru/).
 
+## [Unreleased]
+
+### Fixed
+- **Установка из GitHub теперь собирает пакет** — добавлен скрипт `prepare`. Без него `npm i github:Se-La-Via/YupPay` ставил репозиторий без `dist/` (каталог в `.gitignore`), и импорт `@yuppay/sdk` падал. Пакет в npm-реестре пока не опубликован, поэтому GitHub — основной способ установки.
+
+### Docs
+- README: раздел **Базовый URL** с каноническим `https://portal.yupland.io/functions/v1/yuppay-api` и объяснением **HTTP 402** от старого cloud-проекта (`jkjgpbawhxtafmwsrseb.supabase.co` отключён при переезде на self-host).
+- README и примеры: команды установки — из GitHub; веб-компонент `<yuppay-button>` подключается локально собранным файлом, а не через unpkg; префикс ключа везде `yup_live_…` (легаси `ypp_live_…` принимается, но не рекламируется).
+
 ## [0.3.0] - 2026-06-06
 
 ### Changed (breaking для интеграций, не передающих `baseUrl`)
